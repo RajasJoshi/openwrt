@@ -112,6 +112,17 @@
 				opp-hz = /bits/ 64 <1800000000>;
 				opp-microvolt = <900000>;
 			};
+
+			opp04 {
+				opp-hz = /bits/ 64 <2000000000>;
+				opp-microvolt = <900000>;
+			};
+
+			opp05 {
+				opp-hz = /bits/ 64 <2100000000>;
+				opp-microvolt = <900000>;
+			};
+
 		};
 	};
 
@@ -137,6 +148,16 @@
 		opp03 {
 			opp-hz = /bits/ 64 <1080000000>;
 			opp-microvolt = <900000>;
+		};
+
+		opp04 {
+			opp-hz = /bits/ 64 <2100000000>;
+			opp-microvolt = <950000>;
+		};
+
+		opp05 {
+			opp-hz = /bits/ 64 <2400000000>;
+			opp-microvolt = <1000000>;
 		};
 	};
 
@@ -221,6 +242,13 @@
 			no-map;
 			shared = <1>;
 		};
+	};
+
+	gsw: gsw@15020000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0 0x15020000 0 0x8000>;
+		status = "disabled";
 	};
 
 	soc {
@@ -529,6 +557,14 @@
 				mux {
 					function = "spi";
 					groups = "spi0", "spi0_wp_hold";
+				};
+				conf-pu {
+					pins = "SPI0_CSB", "SPI0_HOLD", "SPI0_WP";
+					drive-strength = <MTK_DRIVE_4mA>;
+				};
+				conf-pd {
+					pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+					drive-strength = <MTK_DRIVE_4mA>;
 				};
 			};
 
@@ -1463,8 +1499,12 @@
 		eth: ethernet@15100000 {
 			compatible = "mediatek,mt7988-eth";
 			reg = <0 0x15100000 0 0x80000>,
-			      <0 0x15400000 0 0x380000>;
-			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
+			      <0 0x15400000 0 0x200000>;
+			interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 191 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 192 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 198 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 199 IRQ_TYPE_LEVEL_HIGH>;
@@ -1647,14 +1687,17 @@
 		};
 
 		crypto: crypto@15600000 {
-			compatible = "inside-secure,safexcel-eip197b";
+			compatible = "inside-secure,safexcel-eip197b",
+				     "security-ip-197-srv";
 			reg = <0 0x15600000 0 0x180000>;
-			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
+			interrupts = <GIC_SPI 213 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 216 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 217 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "ring0", "ring1", "ring2", "ring3";
+			interrupt-names = "global", "ring0", "ring1", "ring2", "ring3";
 			status = "okay";
+			eth = <&eth>;
 		};
 	};
 
