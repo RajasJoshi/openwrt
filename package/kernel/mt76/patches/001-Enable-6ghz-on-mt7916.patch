@@ -1,0 +1,11 @@
+index 928e0b07..af09d5df 100644
+--- a/mt7915/eeprom.c
++++ b/mt7915/eeprom.c
+@@ -6,7 +6,7 @@
+ #include "mt7915.h"
+ #include "eeprom.h"
+
+-static bool enable_6ghz;
++static bool enable_6ghz = 1;
+ module_param(enable_6ghz, bool, 0644);
+ MODULE_PARM_DESC(enable_6ghz, "Enable 6 GHz instead of 5 GHz on hardware that supports both");
