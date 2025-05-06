@@ -12,3 +12,6 @@ include distroconfig.txt
 
 [all]
 # Place your custom settings here.
+dtparam=pciex1
+dtparam=pciex1_gen=3
+dtoverlay=pcie-32bit-dma-pi5
