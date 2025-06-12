@@ -53,7 +53,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4956,6 +4956,15 @@ static int hostapd_config_fill(struct ho
+@@ -4974,6 +4974,15 @@ static int hostapd_config_fill(struct ho
  		bss->mld_indicate_disabled = atoi(pos);
  #endif /* CONFIG_TESTING_OPTIONS */
  #endif /* CONFIG_IEEE80211BE */
@@ -418,7 +418,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4143,7 +4143,7 @@ struct wpa_driver_ops {
+@@ -4156,7 +4156,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, -1 on failure
  	 */
  	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
@@ -429,7 +429,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	 * send_action - Transmit an Action frame
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -8616,25 +8616,15 @@ static int have_ifidx(struct wpa_driver_
+@@ -8615,25 +8615,15 @@ static int have_ifidx(struct wpa_driver_
  
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
