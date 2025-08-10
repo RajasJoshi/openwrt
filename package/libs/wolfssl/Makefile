@@ -151,7 +151,10 @@ CONFIGURE_ARGS += \
 	--$(if $(CONFIG_WOLFSSL_HAS_DTLS),enable,disable)-dtls \
 	--$(if $(CONFIG_WOLFSSL_HAS_ECC25519),enable,disable)-curve25519 \
 	--$(if $(CONFIG_WOLFSSL_HAS_ECC448),enable,disable)-curve448 \
-	--$(if $(CONFIG_WOLFSSL_HAS_OPENVPN),enable,disable)-openvpn
+	--$(if $(CONFIG_WOLFSSL_HAS_OPENVPN),enable,disable)-openvpn \
+	--enable-sha224 \
+	--enable-wolfssh \
+	--enable-wolfclu 
 
 define Package/libwolfsslcpu-crypto/preinst-aarch64
 #!/bin/sh
