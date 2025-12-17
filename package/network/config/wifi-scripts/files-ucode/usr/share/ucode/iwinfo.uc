@@ -169,32 +169,66 @@ function format_rate(rate) {
 	return rate ? sprintf('%.01f', rate / 10.0) : 'unknown';
 }
 
+function format_expected_throughput(rate) {
+	return rate ? sprintf('%.01f', rate / 1000.0) : 'unknown';
+}
+
 function format_mgmt_key(key) {
 	switch(+key) {
 	case 1:
-	case 11:
-	case 12:
-	case 13:
-	case 14:
-	case 15:
-	case 16:
-	case 17:
 		return '802.1x';
 
 	case 2:
 		return 'WPA PSK';
 
+	case 3:
+		return 'FT 802.1x';
+
 	case 4:
 		return 'FT PSK';
 
-	case 6:
-		return 'WPA PSK2';
+	case 5:
+	case 11: // deprecated 802.1x-suiteB-SHA256
+		return '802.1x-SHA256';
 
-	case 8: 
+	case 6:
+		return 'WPA PSK-SHA256';
+
+	case 8: // SAE with SHA256
+	case 24: // SAE using group-dependent hash
 		return 'SAE';
+
+	case 9: // FT SAE with SHA256
+	case 25: // FT SAE using group-dependent hash
+		return 'FT SAE';
+
+	case 12:
+		return '802.1x-192bit';
+
+	case 13:
+		return 'FT 802.1x-SHA384';
+
+	case 14:
+		return 'FILS-SHA256';
+
+	case 15:
+		return 'FILS-SHA384';
+
+	case 16:
+		return 'FT FILS-SHA256';
+
+	case 17:
+		return 'FT FILS-SHA384';
 
 	case 18:
 		return 'OWE';
+
+	case 19:
+		return 'FT PSK-SHA384';
+
+	case 20:
+		return 'WPA PSK-SHA384';
+
 	}
 
 	return null;
@@ -322,7 +356,7 @@ export function assoclist(dev) {
 				packets: station.sta_info.tx_packets ?? 0,
 				flags: assoc_flags(station.sta_info.tx_bitrate ?? {}),
 			},
-			expected_throughput: station.sta_info.expected_throughput ?? 'unknown',
+			expected_throughput: format_expected_throughput(station.sta_info.expected_throughput ?? 0),
 		};
 		ret[sta.mac] = sta;
 	}
