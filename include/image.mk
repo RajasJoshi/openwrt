@@ -356,6 +356,11 @@ ifneq ($(CONFIG_JSON_CYCLONEDX_SBOM),)
 endif
 endef
 
+define Image/Signkmod
+	echo "Signing KMOD........................................................................"
+	find "$(TARGET_DIR)/lib/modules" -name "*.ko" -exec "$(LINUX_DIR)/scripts/sign-file" sha512 $(LINUX_DIR)/certs/signing_key.pem $(LINUX_DIR)/certs/signing_key.x509 '{}' \;
+endef
+
 define Image/gzip-ext4-padded-squashfs
 
   define Image/Build/squashfs
@@ -1002,6 +1007,7 @@ define BuildImage
   endif
 
   kernel_prepare: image_prepare
+	$(call Image/Signkmod)
 	$(call Image/Build/targz)
 	$(call Image/Build/cpiogz)
 	$(call Image/BuildKernel)
