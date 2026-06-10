@@ -73,6 +73,17 @@ config OPENSSL_WITH_ERROR_MESSAGES
 		This option aids debugging, but increases package size and
 		memory usage.
 
+comment "FIPS Support"
+
+config OPENSSL_WITH_FIPS
+	bool
+	prompt "Enable FIPS provider support"
+	default n
+	help
+		This option compiles and installs the OpenSSL FIPS provider module (fips.so)
+		and generates the required 'fipsmodule.cnf' platform self-tests for
+		FIPS 140-3 validation compliance.
+
 comment "Protocol Support"
 
 config OPENSSL_WITH_TLS13

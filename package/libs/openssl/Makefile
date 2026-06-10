@@ -59,7 +59,8 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_OPENSSL_WITH_SRP \
 	CONFIG_OPENSSL_WITH_SSE2 \
 	CONFIG_OPENSSL_WITH_TLS13 \
-	CONFIG_OPENSSL_WITH_WHIRLPOOL
+	CONFIG_OPENSSL_WITH_WHIRLPOOL \
+	CONFIG_OPENSSL_WITH_FIPS
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/openssl-module.mk
@@ -94,7 +95,8 @@ $(call Package/openssl/Default)
 	   +OPENSSL_ENGINE_BUILTIN_AFALG:kmod-crypto-user \
 	   +OPENSSL_ENGINE_BUILTIN_DEVCRYPTO:kmod-cryptodev \
 	   +OPENSSL_ENGINE_BUILTIN_PADLOCK:kmod-crypto-hw-padlock \
-	   +(arm||armeb||mips||mipsel||powerpc):libatomic
+	   +(arm||armeb||mips||mipsel||powerpc):libatomic \
+	   +libjitterentropy
   TITLE+= (libraries)
   ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
   MENU:=1
@@ -217,6 +219,15 @@ The engine_id is "padlock"
 endef
 
 OPENSSL_OPTIONS:= shared no-tests
+OPENSSL_OPTIONS += enable-jitter
+OPENSSL_OPTIONS += --with-jitter-lib=$(STAGING_DIR)/usr/lib
+OPENSSL_OPTIONS += --with-jitter-include=$(STAGING_DIR)/usr/include
+
+ifdef CONFIG_OPENSSL_WITH_FIPS
+  OPENSSL_OPTIONS += enable-fips enable-fips-jitter
+else
+  OPENSSL_OPTIONS += no-fips
+endif
 
 ifndef CONFIG_OPENSSL_WITH_BLAKE2
   OPENSSL_OPTIONS += no-blake2
@@ -386,7 +397,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install_sw install_ssldirs
+		install_sw install_ssldirs install_fips
 endef
 
 define Build/InstallDev
@@ -407,14 +418,24 @@ define Package/libopenssl/install
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.* $(1)/usr/lib/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.* $(1)/usr/lib/
 	$(if $(CONFIG_OPENSSL_ENGINE),$(INSTALL_DIR) $(1)/usr/lib/$(ENGINES_DIR))
+	
+	# Add this block to include fips.so when CONFIG_OPENSSL_WITH_FIPS is enabled
+	$(if $(CONFIG_OPENSSL_WITH_FIPS),
+		$(INSTALL_DIR) $(1)/usr/lib/ossl-modules
+		$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/ossl-modules/fips.so $(1)/usr/lib/ossl-modules/
+	)
 endef
 
 define Package/libopenssl-conf/install
 	$(INSTALL_DIR) $(1)/etc/ssl/modules.cnf.d $(1)/etc/config $(1)/etc/init.d
-	$(CP) $(PKG_INSTALL_DIR)/etc/ssl/openssl.cnf $(1)/etc/ssl/
+	$(CP) ./files/openssl.cnf $(1)/etc/ssl/
 	$(INSTALL_BIN) ./files/openssl.init $(1)/etc/init.d/openssl
 	$(SED) 's!%ENGINES_DIR%!/usr/lib/$(ENGINES_DIR)!' $(1)/etc/init.d/openssl
 	touch $(1)/etc/config/openssl
+	$(INSTALL_DIR) $(1)/etc/ssl/modules.cnf.d/
+	$(if $(CONFIG_OPENSSL_WITH_FIPS),
+		echo -e "config openssl 'fips'\n\toption enabled '1'" >> $(1)/etc/config/openssl
+	)
 	$(if $(CONFIG_OPENSSL_ENGINE),,
 		$(SED) 's!engines = engines_sect!#&!' $(1)/etc/ssl/openssl.cnf)
 	$(if $(CONFIG_OPENSSL_ENGINE_BUILTIN_DEVCRYPTO),

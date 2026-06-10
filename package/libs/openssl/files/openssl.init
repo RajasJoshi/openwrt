@@ -55,6 +55,67 @@ config_provider() {
 		      "${MODULES_DIR}/${1}.so"
 }
 
+# Runs the self-test tool to generate the localized verification block
+fips_runtime_install() {
+    local enabled
+    config_get_bool enabled fips enabled 0
+    [ "$enabled" = 1 ] || return 0
+
+    local fips_cnf="/etc/ssl/modules.cnf.d/fipsmodule.cnf"
+
+    # 1. Run the verification test and output the cryptographic hashes
+    if [ -f "$fips_cnf" ] && [ -s "$fips_cnf" ]; then
+        # Check if FIPS is already active in the main cnf to avoid repeating sed operations
+        grep -q "^.include modules.cnf.d/fipsmodule.cnf" /etc/ssl/openssl.cnf && return 0
+    else
+        if [ ! -f "${MODULES_DIR}/fips.so" ]; then
+            echo "FIPS module fips.so missing from ${MODULES_DIR}. Cannot initialize." >&2
+            return 1
+        fi
+
+        mkdir -p /etc/ssl/modules.cnf.d
+
+        echo "OpenSSL 3.x: Running FIPS module self-test installation..."
+        /usr/bin/openssl fipsinstall \
+            -out "$fips_cnf" \
+            -module "${MODULES_DIR}/fips.so"
+
+        if [ $? -ne 0 ]; then
+            echo "ERROR: OpenSSL FIPS self-test installation failed!" >&2
+            rm -f "$fips_cnf"
+            return 1
+        fi
+    fi
+
+    # 2. SUCCESS: Apply strict fips configurations to /etc/ssl/openssl.cnf
+    echo "Applying FIPS, Base, EVP properties, and JITTER random seed configurations..."
+
+    # Enable the fips include and mapping blocks
+    sed -i 's!^# *\.include modules\.d/fipsmodule\.cnf!.include modules.cnf.d/fipsmodule.cnf!' /etc/ssl/openssl.cnf
+    sed -i 's!^# *fips = fips_sect!fips = fips_sect!' /etc/ssl/openssl.cnf
+    sed -i 's!^# *\[fips_sect\]![fips_sect]!' /etc/ssl/openssl.cnf
+    sed -i 's!^# *activate = 1!activate = 1!' /etc/ssl/openssl.cnf
+
+    # Comment out the default provider declaration block under [provider_sect]
+    sed -i 's!^default = default_sect!# default = default_sect!' /etc/ssl/openssl.cnf
+
+    # Uncomment or inject base provider registration mapping
+    if grep -q "base = base_sect" /etc/ssl/openssl.cnf; then
+        sed -i 's!^# *base = base_sect!base = base_sect!' /etc/ssl/openssl.cnf
+    else
+        sed -i '/# default = default_sect/a base = base_sect' /etc/ssl/openssl.cnf
+    fi
+
+    # Uncomment the global EVP property variables to enforce fips=yes
+    sed -i 's!^# *default_properties = "fips=yes"!default_properties = "fips=yes"!' /etc/ssl/openssl.cnf
+
+    # Uncomment the random configuration and JITTER seeding engine
+    sed -i 's!^# *random = random!random = random!' /etc/ssl/openssl.cnf
+
+    echo "OpenSSL strict FIPS mode with JITTER random seeding activated successfully."
+    return 0
+}
+
 start() {
 	local ret=0
 
@@ -67,6 +128,9 @@ start() {
 	echo Generating providers.cnf
 	write_cnf_header "${PROVIDERS_CNF}" && \
 	config_foreach config_provider provider || ret=$?
+
+	# Run the FIPS localized self-test setup before creating providers.cnf
+	fips_runtime_install || ret=$?
 
 	return $ret
 }
